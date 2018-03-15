@@ -3,8 +3,8 @@ import struct
 import pickle
 import sys
 
-SERVERADDRESS = ('0.0.0.0', 6000)
 
+SERVERADDRESS = ('0.0.0.0', 6000)
 
 
 class Server:
@@ -22,8 +22,10 @@ class Server:
             try:
                 if clt == 'clients':
                     self._handle(client)
+
                 elif clt == 'port':
                     client.send(str(addr[1]).encode())
+
                 elif clt == 'disconnect':
                     for i, j in self.__clients.items():
                         if j[0] == addr[0]:
@@ -35,7 +37,6 @@ class Server:
             except OSError:
                 print('Error with the reception of message')
 
-    # fonction "receive" to get a message from the client
     def _receive(self, client):
         size = struct.unpack('I', client.recv(4))[0]
         data = pickle.loads(client.recv(size)).decode()
@@ -48,6 +49,6 @@ class Server:
         print(clt)
         client.send(clt.encode())
 
+
 if __name__ == '__main__':
-    if sys.argv[1] == 'server':
         Server().run()

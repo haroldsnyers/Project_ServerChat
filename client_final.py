@@ -6,8 +6,8 @@ import pickle
 from datetime import datetime
 
 
-IpAdress = input('IpServerAdress:')
-Port = int(input('PortServerAdress:')) #6000
+IpAdress = input('IpServerAdress :\n')
+Port = int(input('PortServerAdress :\n'))  # 6000
 SERVERADDRESS = (IpAdress, Port)
 
 
@@ -19,7 +19,10 @@ class Chat:
         self.__clients_list = {}
 
     def run(self):
-        #Command for the client
+        self.__running = True
+        self.__address = None
+
+        # Command for the client
         handlers = {
             '/exit': self._exit,
             '/quit': self._quit,
@@ -31,8 +34,6 @@ class Chat:
         for i in handlers.keys():
             print(i)
         print("Enter command !")
-        self.__running = True
-        self.__address = None
 
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
@@ -57,13 +58,16 @@ class Chat:
         threading.Thread(target=self._receive).start()
 
     def _exit(self):
+        # function to exit the application
         self._server_connection("disconnect")
         print("Application closed")
         self.__running = False
         self.__address = None
         self.__s.close()
+        self.__t.close()
 
     def _quit(self):
+        # function to disconnect from an user
         try:
             print("Disconnected from " + str(self.__address[0]))
             self.__address = None
@@ -71,6 +75,7 @@ class Chat:
             print("You're not connected to anyone")
 
     def _join(self, param):
+        # function to make connection with another user to chat
         tokens = self.__clients_list[param]
         try:
             self.__address = (param, (tokens['ip'], int(tokens['port'])))
@@ -79,18 +84,20 @@ class Chat:
             print("Error while trying to connect")
 
     def _send(self, param):
+        # function which makes sending a message possible and gives a structure to this message when sent
         if self.__address is not None:
             try:
                 print("To " + "[" + self.__address[0] + "]" + ": "+param)
                 message = (self.__pseudo + " " + param).encode()
-                totalsent = 0
-                while totalsent < len(message):
-                    sent = self.__s.sendto(message[totalsent:], self.__address[1])
-                    totalsent += sent
+                total_sent = 0
+                while total_sent < len(message):
+                    sent = self.__s.sendto(message[total_sent:], self.__address[1])
+                    total_sent += sent
             except OSError:
                 print('Error while sending the message')
 
     def _receive(self):
+        # function which makes receiving a message possible and gives a structure to this message
         if self.__s is not None:
             while self.__running:
                 try:
@@ -108,26 +115,28 @@ class Chat:
                 except OSError:
                     return
 
-    def _who_s_on(self):
-        self._clients()
-        print("Clients connected on the server :")
-        for i in self.__clients_list.keys():
-            print(i)
-
     def _clients(self):
+        # function which stores the users connected on the server
         clients = self._server_connection("clients")
-        List_of_clients = {}
+        list_of_clients = {}
         for i in clients.split("\n")[:-1]:
             data = i.split(" ")
             name = data[0]
             ip = data[1]
             port = data[2]
-            coords = {"ip":None,"port":None}
+            coords = {"ip": None, "port": None}
             coords["ip"] = ip
             coords["port"] = port
-            List_of_clients[name] = coords
-        self.__clients_list = List_of_clients
+            list_of_clients[name] = coords
+        self.__clients_list = list_of_clients
         return self.__clients_list
+
+    def _who_s_on(self):
+        # function called by /clients which displays the users on the server
+        self._clients()
+        print("Clients connected on the server :")
+        for i in self.__clients_list.keys():
+            print(i)
 
     def _pseudo_to_server(self):
         pseudo_port = (self._server_connection(self.__pseudo)).split(" ")
@@ -139,15 +148,16 @@ class Chat:
         self._chat()
 
     def _server_connection(self, message):
+        # function which connects the user to the server
         self.__t = socket.socket()
         self.__t.connect(SERVERADDRESS)
         try:
-            totalsent = 0
+            total_sent = 0
             msg = pickle.dumps(message.encode())
             self.__t.send(struct.pack('I', len(msg)))
-            while totalsent < len(msg):
-                sent = self.__t.send(msg[totalsent:])
-                totalsent += sent
+            while total_sent < len(msg):
+                sent = self.__t.send(msg[total_sent:])
+                total_sent += sent
             data = self.__t.recv(1024).decode()
             return data
         except OSError:
@@ -155,5 +165,4 @@ class Chat:
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'Chat':
         Chat().run()
